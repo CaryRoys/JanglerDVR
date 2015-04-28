@@ -1,0 +1,1 @@
+"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe" -vvv mmsh://107.1.127.65/fvtv3?MSWMExt=.asf --sout file/asf:Videos\Daytime_%date:~10,4%-%date:~4,2%-%date:~7,2%--%time:~0,2%.%time:~3,2%.asf --run-time 120
