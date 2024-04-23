@@ -4,9 +4,11 @@ Storing a collection of scripts I have used over the years to scrape web streams
 
 ## Powershell
 
-The latest and greatest is a powershell script.  It takes a single parameter and then downloads a file if it's not already in the target folder.
+The latest and greatest is a powershell script.  It takes a single parameter for the download folder, and then downloads a file if it's not already in the target folder.
 
 This makes it really easy to set up a scheduled task or CRON job or similar to just run it once a week to get episodes.
+
+Most of this script was written by the Chromium browser dev mode, once I sniffed out the REST call which got the list of program streams.  
 
 ## Batch file stuff
 
