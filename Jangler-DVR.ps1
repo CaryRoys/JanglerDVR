@@ -1,9 +1,14 @@
 param ($folder = "c:\projects")
 
-function log($msg, $foregroundcolor = "white", $folder)
+function log($msg, $foregroundcolor = "white")
 {
     Write-Host $msg -ForegroundColor $foregroundcolor
-    "$(get-date): $msg" | Out-File -FilePath (join-path -path $folder -childpath "JanglerDVR.log") -Append
+    "$(get-date): $msg" | Out-File -FilePath (join-path -path $ENV:SYS_LOGS -childpath "JanglerDVR.log") -Append
+}
+
+function find-ytdlp()
+{
+    
 }
 
 try
@@ -62,18 +67,29 @@ try
     # de-dupe and download if file not there...
     foreach($uri in ($uris | get-unique))
     {
-        $filename = $uri.Split("/")[$uri.Split("/").Count - 1].Replace("%20"," ")
-        $savepath = join-path -Path $folder -ChildPath $filename
-        if((test-path $savepath) -eq $false)
+    # TODO: handle youtube links and file uri's differently.
+        if($uri -like "*watch?v=*")
         {
-            log -msg "File $savepath not found in save folder!  Downloading..." -ForegroundColor Green -folder $folder
-            Invoke-WebRequest -Uri $uri -OutFile $savepath
+            log -msg "Youtube video detected; downloading: $uri"
+            $stdout = yt-dlp.exe $uri -f mp4 --video-multistreams -o "D:\Videos\Movies\Horror Host Shows\%(title)s.%(ext)s"
+            log -msg $stdout
         }
         else
         {
-             log -msg "File found in savepath; ignoring:  $savepath" -ForegroundColor Yellow -folder $folder
+            $filename = $uri.Split("/")[$uri.Split("/").Count - 1].Replace("%20"," ")
+            $savepath = join-path -Path $folder -ChildPath $filename
+            if((test-path $savepath) -eq $false)
+            {
+                log -msg "File $savepath not found in save folder!  Downloading..." -ForegroundColor Green -folder $folder
+                Invoke-WebRequest -Uri $uri -OutFile $savepath
+            }
+            else
+            {
+                 log -msg "File found in savepath; ignoring:  $savepath" -ForegroundColor Yellow -folder $folder
+            }
+            log -msg "Finished downloading: $savepath" -ForegroundColor Green -folder $folder
         }
-        log -msg "Finished downloading: $savepath" -ForegroundColor Green -folder $folder
+
     } 
 }
 catch
