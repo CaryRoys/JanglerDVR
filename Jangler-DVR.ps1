@@ -5,12 +5,6 @@ function log($msg, $foregroundcolor = "white")
     Write-Host $msg -ForegroundColor $foregroundcolor
     "$(get-date): $msg" | Out-File -FilePath (join-path -path $ENV:SYS_LOGS -childpath "JanglerDVR.log") -Append
 }
-
-function find-ytdlp()
-{
-    
-}
-
 try
 {
 
