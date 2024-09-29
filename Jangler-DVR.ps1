@@ -61,7 +61,6 @@ try
     # de-dupe and download if file not there...
     foreach($uri in ($uris | get-unique))
     {
-    # TODO: handle youtube links and file uri's differently.
         if($uri -like "*watch?v=*")
         {
             log -msg "Youtube video detected; downloading: $uri"
