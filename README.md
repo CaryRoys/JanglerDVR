@@ -10,6 +10,8 @@ This makes it really easy to set up a scheduled task or CRON job or similar to j
 
 Most of this script was written by the Chromium browser dev mode, once I sniffed out the REST call which got the list of program streams.  
 
+The latest version will also download the Youtube links that Jangler puts up lately - it will require YT-DLP to be installed and on the Path environment variable.
+
 ## Batch file stuff
 
 Before there was powershell, there was VLC!  One could just feed in some URI's which were of live streams and dump the content at specific times. 
