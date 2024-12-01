@@ -1,10 +1,60 @@
-param ($folder = "c:\projects")
+param (
+$folder = "c:\projects",
+$register = $false, 
+$dayofWeek = 'Monday', 
+$timeOfDay = '2:00 AM', 
+[PSCredential]$credential)
+
 
 function log($msg, $foregroundcolor = "white")
 {
     Write-Host $msg -ForegroundColor $foregroundcolor
     "$(get-date): $msg" | Out-File -FilePath (join-path -path $ENV:SYS_LOGS -childpath "JanglerDVR.log") -Append
 }
+
+if($register)
+{
+    log -msg "Script running in Register mode!"
+    $taskName = "JanglerDVR"
+    # Check for existing scheduled task
+
+    $task = Get-ScheduledTask -TaskName $taskName -ErrorAction Ignore
+
+    # Create new task
+    $action = New-ScheduledTaskAction -Execute "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -Argument "-file `"$($MyInvocation.MyCommand.Path)`" -folder `"$folder`""
+    $settings = New-ScheduledTaskSettingsSet
+    $principal = New-ScheduledTaskPrincipal -UserId $credential.UserName -LogonType Password  -RunLevel Highest
+    $trigger = New-ScheduledTaskTrigger -DaysOfWeek $dayofWeek -At $timeOfDay -Weekly
+    $newTask = New-ScheduledTask -Action $action -Description "JanglerDVR script" -Principal $principal -Settings $settings -Trigger $trigger
+
+    if($task -ne $null)
+    {
+        # Remove existing task and recreate it.
+        Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
+    }
+   
+    Register-ScheduledTask -TaskName $taskName -InputObject $newTask -Password $credential.GetNetworkCredential().Password -User $credential.UserName
+    log -msg "Successfully recreated $taskName scheduled task for every $dayofWeek at $timeOfDay"
+    exit
+}
+
+
+
+function find-ytdlp()
+{
+    log -msg "find-ytdlp: checking path: $($ENV:TOOLS)yt-dlp_win\yt-dlp.exe"
+    if((test-path -Path "$($ENV:TOOLS)yt-dlp_win\yt-dlp.exe" -PathType Any))
+    {
+        log -msg "YT-DLP.exe found!"
+        return "$($ENV:TOOLS)yt-dlp_win\yt-dlp.exe"
+    }
+    else
+    {
+
+        throw "find-ytdlp: YT-DLP Not found!  Please check TOOLS environment variable"
+    }
+}
+
 try
 {
 
@@ -64,8 +114,22 @@ try
         if($uri -like "*watch?v=*")
         {
             log -msg "Youtube video detected; downloading: $uri"
-            $stdout = yt-dlp.exe $uri -f mp4 --video-multistreams -o "D:\Videos\Movies\Horror Host Shows\%(title)s.%(ext)s"
-            log -msg $stdout
+            $savepath = join-path -Path $folder -ChildPath "%(title)s.%(ext)s"
+            $exepath = find-ytdlp
+            log -msg "Running command: `"$exepath`"  $uri -f mp4 --video-multistreams -o `"$savepath`""
+            # Note: We have to use this method instead of start-process, because start-process invokes the shell.  
+            # Meaning, if you have not approved the unsigned *.exe, when your automated process runs, the (not non-interactive) prompt to confirm running the *.exe will silently hang the script.
+            # You don't have that problem if you CreateProcess() intead via the C# Process object with UseShellExecute = false
+            $pi = new-object -TypeName System.Diagnostics.ProcessStartInfo
+            $pi.Arguments =  "$uri -f mp4 --video-multistreams -o `"$savepath`""
+            $pi.FileName = $exepath
+            $pi.WorkingDirectory = "$($ENV:TOOLS)yt-dlp_win\"
+            $pi.UseShellExecute = $false
+            $proc = new-object -TypeName System.Diagnostics.Process
+            $proc.StartInfo = $pi
+            $proc.Start()
+            $proc.WaitForExit()
+            
         }
         else
         {
@@ -90,5 +154,8 @@ catch
     log -msg "Download of uri failed!  URI: $uri" -ForegroundColor Red -folder $folder
     log -msg "SavePath: $savepath" -ForegroundColor Red -folder $folder
     log -msg $_.Message -ForegroundColor Red -folder $folder
+    log -msg $_.InnerException
+    log -msg $_
+    log -msg $stdout
 }
 
