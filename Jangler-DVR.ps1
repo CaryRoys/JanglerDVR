@@ -1,4 +1,5 @@
 param (
+$filter = "*jangler*",
 $folder = "c:\projects",
 $register = $false, 
 $dayofWeek = 'Monday', 
@@ -42,11 +43,11 @@ if($register)
 
 function find-ytdlp()
 {
-    log -msg "find-ytdlp: checking path: $($ENV:TOOLS)yt-dlp_win\yt-dlp.exe"
-    if((test-path -Path "$($ENV:TOOLS)yt-dlp_win\yt-dlp.exe" -PathType Any))
+    log -msg "find-ytdlp: checking path: $(join-path $ENV:TOOLS "yt-dlp_win\yt-dlp.exe")"
+    if((test-path -Path (join-path $ENV:TOOLS "yt-dlp_win\yt-dlp.exe") -PathType Any))
     {
         log -msg "YT-DLP.exe found!"
-        return "$($ENV:TOOLS)yt-dlp_win\yt-dlp.exe"
+        return (join-path $ENV:TOOLS "yt-dlp_win\yt-dlp.exe")
     }
     else
     {
@@ -99,7 +100,8 @@ $uris = @()
 
 foreach($item in $respObj.content)
 {
-    if($item.s_name -like "*jangler*")
+    Write-Host "Evaluating item: $($item.s_name)"
+    if($item.s_name -like $filter)
     {
         $uris += $item.content
         log -msg "Found Jangler stream item: $($item.content); adding to list" -ForegroundColor Green -folder $folder
